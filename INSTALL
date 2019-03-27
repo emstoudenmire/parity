@@ -1,0 +1,19 @@
+Steps to compile:
+
+1. Clone ITensor and switch to rc3 branch:
+     cd the/folder/where/you/want/itensor/
+     git clone https://github.com/ITensor/ITensor.git itensor
+     git checkout rc3
+
+2. Set up and compile ITensor:
+     cp options.mk.sample options.mk
+     <then edit options.mk and adjust to your computer's settings>
+     make
+
+3. Set up a Makefile for yourself:
+     cp Makefile.miles Makefile.myname
+     ln -s Makefile.myname Makefile
+     <then edit the top line of Makefile.myname to point to where ITensor is installed>
+
+4. Compile the learn.cc program:
+     make
