@@ -1,8 +1,13 @@
 LIBRARY_DIR=$(HOME)/software/itensor
 
-HEADERS=
+HEADERS=bitstring.h
 
+ifdef app
+APP=$(app)
+else
 APP=learn
+APP=tree
+endif
 
 CCFILES=$(APP).cc
 
