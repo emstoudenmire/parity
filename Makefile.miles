@@ -5,8 +5,9 @@ HEADERS=bitstring.h
 ifdef app
 APP=$(app)
 else
-APP=learn
 APP=tree
+APP=test
+APP=learn
 endif
 
 CCFILES=$(APP).cc

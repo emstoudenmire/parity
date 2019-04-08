@@ -121,4 +121,18 @@ binarySample(MPS W)
     return state;
     }
 
+//
+// Compare the bit strings b1 and b2
+// starting with the n'th bit
+// Returns true if bits n,n+1,...,N match
+// 
+bool inline
+compFrom(int n,
+         BitString b1,
+         BitString b2)
+    {
+    auto shift = n-1;
+    return (b1 >> shift) == (b2 >> shift);
+    }
+
 } //namespace itensor

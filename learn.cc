@@ -40,17 +40,7 @@ makeMPS(SiteSet const& sites,
         for(auto i : range(ndata))
         for(int j = i; j < ndata; j += 1)
             {
-            //printfln("i = %d, j = %d",i,j);
-            bool include = true;
-            for(int m = n+2; m <= N; m += 1)
-                {
-                //printfln("  n=%d bi=%d bj=%d",n,bit(data[i],n),bit(data[j],n));
-                if(bit(data[i],m) != bit(data[j],m))
-                    {
-                    include = false;
-                    break;
-                    }
-                }
+            bool include = compFrom(n+2,data[i],data[j]);
             if(include)
                 {
                 auto wfi = env[i]*phi(i,n+1);
@@ -96,8 +86,10 @@ sampleMPS(SiteSet const& sites,
           Args const& args = Args::global())
     {
     auto N = length(sites);
-    auto Nsample = args.getInt("NSample");
+    auto rthreshold = args.getReal("RhoThreshold");
     auto maxdim = args.getInt("MaxDim");
+    auto minsamples = args.getInt("MinSamples");
+    auto nstep = 64;
 
     auto phi = [&sites](BitString B, int n) -> ITensor
         {
@@ -113,65 +105,87 @@ sampleMPS(SiteSet const& sites,
 
     for(int n : range1(1,N))
         {
-        //printfln("n = %d",n);
-        ITensor rho;
+        printfln("n = %d",n);
+        ITensor rho,rho_prev;
+        bool converged = false;
 
-        int nused = 0;
-
-        for(auto s : range(Nsample))
+        auto samples = stdx::reserve_vector<BitString>(minsamples);
+        for(int s = 1; s <= minsamples-nstep; ++s)
             {
-            auto bi = randomEven(N);
-            auto bj = randomEven(N);
-
-            //TODO: speed up by (b << n) and bi == bj
-            bool include = true;
-            for(int m = n+2; m <= N; m += 1)
-                {
-                //printfln("  n=%d bi=%d bj=%d",n,bit(data[i],n),bit(data[j],n));
-                if(bit(bi,m) != bit(bj,m))
-                    {
-                    include = false;
-                    break;
-                    }
-                }
-            if(not include) continue;
-
-            nused += 1;
-
-            //printfln("bi = %d, bj = %d",bi,bj);
-
-            //Make environment tensors
-            auto envi = ITensor(1);
-            auto envj = ITensor(1);
-            for(int k = 1; k < n; ++k)
-                {
-                envi = psi(k)*envi*phi(bi,k);
-                envj = psi(k)*envj*phi(bj,k);
-                }
-
-            auto wfi = envi*phi(bi,n);
-            auto wfj = envj*phi(bj,n);
-            rho += wfi*prime(wfj);
-            if(bi == bj) rho += wfj*prime(wfi);
+            samples.push_back(randomEven(N));
             }
 
-        printfln("n=%d nused=%d",n,nused);
+        while(not converged)
+            {
+            rho = ITensor();
+            for(int i1 = 0; i1 < samples.size(); ++i1)
+            for(int i2 = i1; i2 < samples.size(); ++i2)
+                {
+                auto b1 = samples[i1];
+                auto b2 = samples[i2];
+                bool include = compFrom(n+1,b1,b2);
+                if(include)
+                    {
+                    //Make environment tensors
+                    auto env1 = ITensor(1);
+                    auto env2 = ITensor(1);
+                    for(int k = 1; k < n; ++k)
+                        {
+                        env1 = psi(k)*env1*phi(b1,k);
+                        env2 = psi(k)*env2*phi(b2,k);
+                        }
+
+                    auto wf1 = env1*phi(b1,n);
+                    auto wf2 = env2*phi(b2,n);
+                    rho += wf1*prime(wf2);
+                    if(i1 != i2) rho += wf2*prime(wf1);
+                    }
+                }
+
+            auto Tr = rho * delta(sites(n),prime(sites(n)));
+            if(eind) Tr *= delta(eind,prime(eind));
+            rho /= elt(Tr);
+
+            if(rho_prev)
+                {
+                converged = (norm(rho-rho_prev) < rthreshold);
+                }
+            rho_prev = rho;
+
+            for(int s = 1; s <= nstep; ++s) samples.push_back(randomEven(N));
+            }
+
+        printfln("rho_%d converged after %d samples",n,samples.size());
 
         auto Tr = rho * delta(sites(n),prime(sites(n)));
         if(eind) Tr *= delta(eind,prime(eind));
+        Print(Tr);
         rho /= elt(Tr);
+        PrintData(rho);
 
         auto [U,D,l] = diagHermitian(rho,{"Tags=","Link,"+format("n=%d",n),"MaxDim=",maxdim});
+        //auto [U,D,l] = diagHermitian(rho,{"Tags=","Link,"+format("n=%d",n)});
+        PrintData(U);
+        Print(norm(rho-U*D*prime(U)));
         eind = l;
-        Print(elt(D,1,1));
-        Print(elt(D,2,2));
-        println();
+        auto eTr = 0.;
+        println("D = ");
+        for(int d = 1; d <= dim(l); ++d)
+            {
+            printfln("%d  %.5f",d,elt(D,d,d));
+            eTr += elt(D,d,d);
+            }
+        Print(eTr);
+        //PAUSE;
 
         psi.set(n,U);
         }
 
     auto P = ITensor(eind);
-    for(auto s : range(Nsample))
+    ITensor Pprev;
+    bool converged = false;
+    int step = 0;
+    while(not converged)
         {
         auto bi = randomEven(N);
         auto envi = ITensor(1);
@@ -180,8 +194,15 @@ sampleMPS(SiteSet const& sites,
             envi = psi(k)*envi*phi(bi,k);
             }
         P += envi;
+        P /= norm(P);
+        step += 1;
+        if(Pprev)
+            {
+            converged = (norm(P-Pprev) < rthreshold);
+            }
+        Pprev = P;
+        if(step > 10000) break;
         }
-    P /= norm(P);
     psi.set(N,psi(N)*P);
 
     psi.position(1);
@@ -242,20 +263,22 @@ bhattDist(MPS const& psi, SiteSet const& sites)
 int
 main()
     {
-    int N = 12;
-    int Nsample = 1000;
+    int N = 6;
     int maxDim = 3;
 
     //auto data = allEvenStrings(N);
 
-    auto data = vector<BitString>(Nsample);
-    for(auto& s : data) s = randomEven(N);
-    println("Done making data");
+    //int Nsample = 1000;
+    //auto data = vector<BitString>(Nsample);
+    //for(auto& s : data) s = randomEven(N);
+    //println("Done making data from samples");
 
     auto sites = SiteSet(N,2);
 
-    //auto psi = sampleMPS(sites,{"NSample=",10000,"MaxDim=",maxDim});
-    auto psi = makeMPS(sites,data,{"MaxDim=",maxDim});
+    //auto psi = makeMPS(sites,data,{"MaxDim=",maxDim});
+    auto psi = sampleMPS(sites,{"RhoThreshold=",1E-2,
+                                "MinSamples=",500,
+                                "MaxDim=",maxDim});
 
     Print(bhattDist(psi,sites));
 
