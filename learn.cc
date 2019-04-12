@@ -406,6 +406,8 @@ main(int argc, char* argv[])
 
     auto samplePolicy = PushSample(data);
 
+    std::ofstream f("out.dat");
+
     //auto psi = makeMPS(sites,data,{"MaxDim=",maxDim});
     vector<Real> distances;
     for(int step = 1; step <= nrepeat; ++step)
@@ -419,7 +421,11 @@ main(int argc, char* argv[])
                               "PauseStep=",pause_step});
         auto dist = bhattDist(psi,sites);
         Print(dist);
-        if(not isnan(dist)) distances.push_back(dist);
+        if(not isnan(dist)) 
+            {
+            distances.push_back(dist);
+            printfln(f,"%.12f",dist);
+            }
         println("Distances so far = ");
         Real avg = 0;
         Real avg2 = 0;
@@ -437,6 +443,7 @@ main(int argc, char* argv[])
         printfln("std dev = %.12f",sqrt(avg2-avg*avg));
         sleep(3);
         }
+    f.close();
 
     //for(auto n : range1(20))
     //    {

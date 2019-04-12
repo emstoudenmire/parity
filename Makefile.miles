@@ -19,6 +19,9 @@ include $(LIBRARY_DIR)/options.mk
 
 TENSOR_HEADERS=$(LIBRARY_DIR)/itensor/core.h
 
+CCFLAGS += -Wno-sign-compare
+CCGFLAGS += -Wno-sign-compare
+
 #Mappings --------------
 OBJECTS=$(patsubst %.cc,%.o, $(CCFILES))
 GOBJECTS=$(patsubst %,.debug_objs/%, $(OBJECTS))
