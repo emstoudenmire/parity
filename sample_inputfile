@@ -1,0 +1,12 @@
+input
+{
+N = 12
+maxDim = 2
+
+minsamples = 100
+samplestep = 10
+rho_threshold = 0.005
+nrepeat = 300
+
+pause_step = no
+}
