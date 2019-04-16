@@ -392,6 +392,7 @@ main(int argc, char* argv[])
     auto samplestep = in.getInt("samplestep",1);
     auto pause_step = in.getYesNo("pause_step",false);
     auto nrepeat = in.getInt("nrepeat",1);
+    auto fraction = in.getReal("fraction",1.);
 
     auto data = allEvenStrings(N);
     printfln("Data set size = %d",data.size());
@@ -407,18 +408,30 @@ main(int argc, char* argv[])
     auto samplePolicy = PushSample(data);
 
     std::ofstream f("out.dat");
+    int fsize = fraction*data.size();
+    auto frac_data = decltype(data)(fsize);
+    Print(frac_data.size());
 
     //auto psi = makeMPS(sites,data,{"MaxDim=",maxDim});
     vector<Real> distances;
     for(int step = 1; step <= nrepeat; ++step)
         {
-        auto psi = sampleMPS(sites,
-                             samplePolicy,
-                             {"RhoThreshold=",rho_threshold,
-                              "MinSamples=",minsamples,
-                              "SampleStep=",samplestep,
-                              "MaxDim=",maxDim,
-                              "PauseStep=",pause_step});
+        println("Shuffling data");
+        randshuffle(data);
+        for(auto n : range(fsize)) frac_data[n] = data[n];
+
+        auto psi = makeMPS(sites,
+                           frac_data,
+                           {"MaxDim=",maxDim});
+
+        //auto psi = sampleMPS(sites,
+        //                     samplePolicy,
+        //                     {"RhoThreshold=",rho_threshold,
+        //                      "MinSamples=",minsamples,
+        //                      "SampleStep=",samplestep,
+        //                      "MaxDim=",maxDim,
+        //                      "PauseStep=",pause_step});
+
         auto dist = bhattDist(psi,sites);
         Print(dist);
         if(not isnan(dist)) 
@@ -441,7 +454,8 @@ main(int argc, char* argv[])
         println();
         printfln("avg = %.12f",avg);
         printfln("std dev = %.12f",sqrt(avg2-avg*avg));
-        sleep(3);
+        printfln("std err = %.12f",sqrt(avg2-avg*avg)/sqrt(Nt));
+        //sleep(1);
         }
     f.close();
 
