@@ -43,19 +43,21 @@ makeMPS(SiteSet const& sites,
 
     for(int n : range1(1,N-1))
         {
-        //printfln("n = %d",n);
+        printf(" %d",n);
         ITensor rho;
 
         for(auto i : range(ndata))
-        for(int j = i; j < ndata; j += 1)
             {
-            bool include = compFrom(n+2,data[i],data[j]);
-            if(include)
+            auto wfi = env[i]*phi(i,n+1);
+            for(int j = i; j < ndata; j += 1)
                 {
-                auto wfi = env[i]*phi(i,n+1);
-                auto wfj = env[j]*phi(j,n+1);
-                rho += wfi*prime(wfj);
-                if(i != j) rho += wfj*prime(wfi);
+                bool include = compFrom(n+2,data[i],data[j]);
+                if(include)
+                    {
+                    auto wfj = env[j]*phi(j,n+1);
+                    rho += wfi*prime(wfj);
+                    if(i != j) rho += wfj*prime(wfi);
+                    }
                 }
             }
 
@@ -75,6 +77,7 @@ makeMPS(SiteSet const& sites,
             env[i] = U*env[i]*phi(i,n+1);
             }
         }
+    println();
 
     ITensor U(sites(1)),D,V;
     svd(psi(2),U,D,V,{"Tags=","Link"});
@@ -393,6 +396,7 @@ main(int argc, char* argv[])
     auto pause_step = in.getYesNo("pause_step",false);
     auto nrepeat = in.getInt("nrepeat",1);
     auto fraction = in.getReal("fraction",1.);
+    auto amount = in.getInt("amount",0);
 
     auto data = allEvenStrings(N);
     printfln("Data set size = %d",data.size());
@@ -408,7 +412,15 @@ main(int argc, char* argv[])
     auto samplePolicy = PushSample(data);
 
     std::ofstream f("out.dat");
-    int fsize = fraction*data.size();
+    int fsize = 0;
+    if(amount != 0)
+        {
+        fsize = amount;
+        }
+    else
+        {
+        fsize = fraction*data.size();
+        }
     auto frac_data = decltype(data)(fsize);
     Print(frac_data.size());
 
@@ -419,7 +431,8 @@ main(int argc, char* argv[])
         println("Shuffling data");
         randshuffle(data);
         for(auto n : range(fsize)) frac_data[n] = data[n];
-
+    
+        println("Computing MPS");
         auto psi = makeMPS(sites,
                            frac_data,
                            {"MaxDim=",maxDim});

@@ -1,7 +1,9 @@
 input
 {
 N = 12
+
 maxDim = 2
+amount = 1000
 
 minsamples = 100
 samplestep = 10
