@@ -1,0 +1,13 @@
+input
+{
+N = 5
+maxDim = 2
+
+load_data = no
+Ntrain = 10
+
+//load_data = yes
+//input_datafile = test_data_in.txt
+
+output_datafile = test_data_out.txt
+}
