@@ -65,6 +65,10 @@ makeMPS(SiteSet const& sites,
                        * delta(sites(n+1),prime(sites(n+1)))).real();
         rho /= Tr;
 
+        //println();
+        //PrintData(rho);
+        //EXIT;
+
         ITensor U,D;
         diagHermitian(rho,U,D,{"Tags=","Link","MaxDim=",maxDim});
         //PrintData(D);
