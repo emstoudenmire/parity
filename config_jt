@@ -1,13 +1,23 @@
+// data options are:  
+//	load from file (in which case Ntrain and with_replacement are not used)
+// 	make data with replacement (Miles) (and input_datafile is not used)
+// 	make data without replacement (and input_datafile is not used)
+
+// writes training data to output_datafile 
+// writes scores to "scores_" + output_datafile
+// writes psi to "psi_" + output_datafile
+
 input
 {
 N = 5
 maxDim = 2
-
-//load_data = no
-//Ntrain = 10
-
 load_data = yes
-input_datafile = test_data_in.txt
+Ntrain = 20 # not used if load_data = yes
+with_replacement = no # not used if load_data = yes
 
-output_datafile = test_data_out.txt
+input_datafile = test_data_in.txt 
+output_datafile = test_data_out.txt 
+
+verbose = yes # turns on screen printing of rho and psi
+
 }

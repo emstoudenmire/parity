@@ -144,7 +144,7 @@ readData(string datafile)
     std::ifstream f_in(datafile);
     if(not f_in.good()) Error("Could not find datafile / invalid file");
     vector<BitString> lines;
-    print("Loading data from file %s...",datafile);
+    printfln("Loading data from file %s...",datafile);
 
     for (std::string line; std::getline( f_in, line ); /**/ )
         {
@@ -154,9 +154,18 @@ readData(string datafile)
     return lines;
     }
 
-
 vector<BitString>
-makeData(int Ntrain,int N)
+makeDataWithReplacement(int Ntrain,int N)
+    {
+    auto data = vector<BitString>(Ntrain);
+    for(auto& s : data)
+        {s = randomEven(N);
+        }
+    return data;
+    }   
+
+vector<BitString> // scales exponentially! 
+makeDataWithoutReplacement(int Ntrain,int N)
         {
         printfln("Making data");
         auto allbitstrings = allEvenStrings(N);
@@ -179,6 +188,7 @@ makeMPS(SiteSet const& sites,
     {
     auto N = length(sites);
     auto maxDim = args.getInt("MaxDim",10);
+    auto verbose = args.getBool("verbose",false);
     
     auto phi = [&data,&sites](int i,int n) -> ITensor
         {
@@ -227,11 +237,7 @@ makeMPS(SiteSet const& sites,
                 if(i != j) rho += wfj*prime(wfi);
                 }
             }
-        if(n==1) 
-            {
-            printfln("\n Getting Rho_2 \n");
-            PrintData(rho);
-            }
+        if(verbose) PrintData(rho);
 
         auto Tr = (rho * delta(eind,prime(eind)) 
                        * delta(sites(n+1),prime(sites(n+1)))).real();
@@ -319,7 +325,9 @@ main(int argc, char* argv[])
     auto Ntrain = in.getInt("Ntrain",0);
     auto outdatafile = in.getString("output_datafile","default_out.txt");
     auto load_data = in.getYesNo("load_data");
+    auto with_replacement = in.getYesNo("with_replacement", true);
     auto indatafile = in.getString("input_datafile","default_in.txt");
+    auto verbose = in.getYesNo("verbose", true);
 
     // load or make data
 
@@ -328,21 +336,33 @@ main(int argc, char* argv[])
     {
          data = readData(indatafile);
          int Ntrain = data.size();
-         printfln("\nLoaded %i training examples from %d", Ntrain,indatafile);
+         printfln("\n *** Loaded %i training examples from %d \n", Ntrain,indatafile);
     }
-    else 
+    else if (with_replacement)
         {
-            data = makeData(Ntrain,N);
-            printfln("Made %i training examples", Ntrain);
+            data = makeDataWithReplacement(Ntrain,N);
+            printfln("\n *** Made %i training examples with replacement \n", Ntrain);
+        }
+    else
+        {
+            data = makeDataWithoutReplacement(Ntrain,N);
+            printfln("\n *** Made %i training examples without replacement \n", Ntrain);
         }
 
+
     auto sites = SiteSet(N,2);
-    auto psi = makeMPS(sites,data,{"MaxDim=",maxDim});
-    println("Training complete \n.  Here are the first tensors in psi: \n");
+    auto psi = makeMPS(sites,data,{"MaxDim=",maxDim, "verbose=", verbose});
+    println("Training complete. \n");
     
-    psi.position(3);
-    PrintData(psi.A(1));
-    PrintData(psi.A(2));
+    if (verbose)
+        {
+            println("Tensors in Psi \n");
+            psi.position(N);
+            for(auto i : range1(N))
+            {
+                PrintData(psi.A(i));
+            }
+        }
 
     float op = inner(psi,exactMPS(sites)); 
    
