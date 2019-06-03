@@ -146,10 +146,10 @@ readData(string datafile)
     vector<BitString> lines;
     printfln("Loading data from file %s...",datafile);
 
-    for (std::string line; std::getline( f_in, line ); /**/ )
+    for(std::string line; std::getline( f_in, line ); /**/ )
         {
-            BitString b = std::stoi( line );
-            lines.push_back( b );
+        BitString b = std::stoi(line);
+        lines.push_back(b);
         }
     return lines;
     }
@@ -231,6 +231,7 @@ makeMPS(SiteSet const& sites,
                 }
             if(include)
                 {
+                printfln("Including strings: %d=%s %d=%s",i,toString(data[i],N),j,toString(data[j],N));
                 auto wfi = env[i]*phi(i,n+1);
                 auto wfj = env[j]*phi(j,n+1);
                 rho += wfi*prime(wfj);
@@ -257,17 +258,29 @@ makeMPS(SiteSet const& sites,
             }
         }
 
-    ITensor U(sites(1)),D,V;
-    svd(psi(2),U,D,V,{"Tags=","Link"});
-    psi.set(1,U);
-    psi.set(2,D*V);
+    auto l1 = Index(dim(sites(1)),"Link");
+    auto A1 = ITensor(sites(1),l1);
+    for(auto n : range1(dim(sites(1))))
+        {
+        A1.set(n,n, 1.);
+        }
+    auto oldA12 = psi(2);
+    psi.ref(1) = A1;
+    psi.ref(2) *= delta(sites(1),l1);
+
+    Print(norm(oldA12 - psi(1)*psi(2)));
+
+    //ITensor U(sites(1)),D,V;
+    //svd(psi(2),U,D,V,{"Tags=","Link"});
+    //psi.set(1,U);
+    //psi.set(2,D*V);
 
     ITensor P;
     for(auto e : env) P += e;
     P /= norm(P);
     psi.set(N,psi(N)*P);
 
-    psi.position(1);
+    //psi.position(1);
     return psi;
     }
 
@@ -333,34 +346,40 @@ main(int argc, char* argv[])
 
     std::vector<BitString> data;
     if (load_data)
-    {
-         data = readData(indatafile);
-         int Ntrain = data.size();
-         printfln("\n *** Loaded %i training examples from %d \n", Ntrain,indatafile);
-    }
+        {
+        data = readData(indatafile);
+        int Ntrain = data.size();
+        printfln("\n *** Loaded %i training examples from %d \n", Ntrain,indatafile);
+        }
     else if (with_replacement)
         {
-            data = makeDataWithReplacement(Ntrain,N);
-            printfln("\n *** Made %i training examples with replacement \n", Ntrain);
+        data = makeDataWithReplacement(Ntrain,N);
+        printfln("\n *** Made %i training examples with replacement \n", Ntrain);
         }
     else
         {
-            data = makeDataWithoutReplacement(Ntrain,N);
-            printfln("\n *** Made %i training examples without replacement \n", Ntrain);
+        data = makeDataWithoutReplacement(Ntrain,N);
+        printfln("\n *** Made %i training examples without replacement \n", Ntrain);
         }
 
 
     auto sites = SiteSet(N,2);
+
+    println("Data:");
+    for(auto& d : data)
+        {
+        printfln("  %s",toString(d,N));
+        }
     auto psi = makeMPS(sites,data,{"MaxDim=",maxDim, "verbose=", verbose});
     println("Training complete. \n");
     
-    if (verbose)
+    if(verbose)
         {
-            println("Tensors in Psi \n");
-            psi.position(N);
-            for(auto i : range1(N))
+        println("Tensors in Psi \n");
+        psi.position(N);
+        for(auto i : range1(N))
             {
-                PrintData(psi.A(i));
+            PrintData(psi.A(i));
             }
         }
 
