@@ -8,6 +8,7 @@ else
 APP=tree
 APP=test
 APP=learn
+APP=learn_jt6
 endif
 
 CCFILES=$(APP).cc
