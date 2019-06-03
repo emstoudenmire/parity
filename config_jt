@@ -15,7 +15,7 @@ load_data = yes
 Ntrain = 20 # not used if load_data = yes
 with_replacement = no # not used if load_data = yes
 
-input_datafile = test_data_in.txt 
+input_datafile = reverse_test_data_in.txt 
 output_datafile = test_data_out.txt 
 
 verbose = yes # turns on screen printing of rho and psi
