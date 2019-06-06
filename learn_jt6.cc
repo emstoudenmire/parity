@@ -231,7 +231,6 @@ makeMPS(SiteSet const& sites,
                 }
             if(include)
                 {
-                printfln("Including strings: %d=%s %d=%s",i,toString(data[i],N),j,toString(data[j],N));
                 auto wfi = env[i]*phi(i,n+1);
                 auto wfj = env[j]*phi(j,n+1);
                 rho += wfi*prime(wfj);
@@ -247,7 +246,7 @@ makeMPS(SiteSet const& sites,
         
 
         ITensor U,D;
-        diagHermitian(rho,U,D,{"Tags=","Link","MaxDim=",maxDim});
+        diagPosSemiDef(rho,U,D,{"Tags=","Link","MaxDim=",maxDim});
 
         psi.set(1+n,U);
 
@@ -365,13 +364,24 @@ main(int argc, char* argv[])
 
     auto sites = SiteSet(N,2);
 
-    println("Data:");
-    for(auto& d : data)
+    if(verbose)
         {
-        printfln("  %s",toString(d,N));
+        auto num_show = std::min(data.size(),100ul);
+        printfln("Data (showing %d/%d):",num_show,data.size());
+        for(auto n : range(num_show))
+            {
+            printfln("  %s",toString(data.at(n),N));
+            }
         }
     auto psi = makeMPS(sites,data,{"MaxDim=",maxDim, "verbose=", verbose});
     println("Training complete. \n");
+
+    println("Bond dimensions of psi:");
+    for(auto j : range1(N-1))
+        {
+        printfln("  %d",dim(rightLinkIndex(psi,j)));
+        }
+    println();
     
     if(verbose)
         {
