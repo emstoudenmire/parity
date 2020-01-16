@@ -1,9 +1,8 @@
 Steps to compile:
 
-1. Clone ITensor and switch to rc3 branch:
-     cd the/folder/where/you/want/itensor/
+1. Clone the ITensor library (in a separate folder):
+     cd the/folder/where/you/want/  itensor to be installed
      git clone https://github.com/ITensor/ITensor.git itensor
-     git checkout rc3
 
 2. Set up and compile ITensor:
      cp options.mk.sample options.mk
@@ -11,7 +10,7 @@ Steps to compile:
      make
 
 3. Set up a Makefile for yourself:
-     cp Makefile.miles Makefile.myname
+     cp Makefile.default Makefile.myname
      ln -s Makefile.myname Makefile
      <then edit the top line of Makefile.myname to point to where ITensor is installed>
 
