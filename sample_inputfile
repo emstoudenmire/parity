@@ -1,0 +1,10 @@
+input
+{
+N = 12
+maxDim = 2
+
+fraction = 0.25
+nrepeat = 1
+
+pause_step = no
+}
