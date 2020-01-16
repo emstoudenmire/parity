@@ -70,7 +70,7 @@ makeMPS(SiteSet const& sites,
         //EXIT;
 
         ITensor U,D;
-        diagHermitian(rho,U,D,{"Tags=","Link","MaxDim=",maxDim});
+        diagPosSemiDef(rho,U,D,{"Tags=","Link","MaxDim=",maxDim});
         //PrintData(D);
 
         psi.set(1+n,U);
@@ -199,8 +199,9 @@ sampleMPS(SiteSet const& sites,
                 //
                 // Diagonalize rho just to visually inspect
                 //
-                auto [U,D,l] = diagHermitian(rho,{"Tags=","Link,"+format("n=%d",n)});
+                auto [U,D] = diagPosSemiDef(rho,{"Tags=","Link,"+format("n=%d",n)});
                 //auto eTr = 0.;
+                auto l = commonIndex(U,D);
                 println("D = ");
                 for(int d = 1; d <= dim(l); ++d)
                     {
@@ -231,8 +232,9 @@ sampleMPS(SiteSet const& sites,
         if(eind) Tr *= delta(eind,prime(eind));
         rho /= elt(Tr);
 
-        auto [U,D,l] = diagHermitian(rho,{"Tags=","Link,"+format("n=%d",n),"MaxDim=",maxdim});
+        auto [U,D] = diagPosSemiDef(rho,{"Tags=","Link,"+format("n=%d",n),"MaxDim=",maxdim});
         //auto [U,D,l] = diagHermitian(rho,{"Tags=","Link,"+format("n=%d",n)});
+        auto l = commonIndex(U,D);
         PrintData(U);
         eind = l;
         auto eTr = 0.;
