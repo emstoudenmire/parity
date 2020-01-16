@@ -4,6 +4,7 @@ and learning this data (generative modeling) using matrix product state (MPS)
 tensor networks, also known as tensor trains (TT)
 
 The algorithm and goal of this project is described in the companion paper
+
 _Modeling Sequences with Quantum States: A Look Under the Hood_
 Tai-Danae Bradley, E. Miles Stoudenmire, John Terilla
 
