@@ -111,7 +111,7 @@ exactMPS(SiteSet const& sites)
     auto psi = MPS(sites);
 
     auto link = vector<Index>(1+N);
-    for(auto n : range(link)) link.at(n) = Index(2,format("Link,l=%d",n));
+    for(auto n : range(link)) link.at(n) = Index(2,tinyformat::format("Link,l=%d",n));
 
 
     for(auto n : range1(N))
@@ -202,7 +202,7 @@ main(int argc, char* argv[])
                            {"MaxDim=",maxDim});
 
         auto dist = bhattDist(psi,sites);
-        Print(dist);
+        //Print(dist);
         if(not isnan(dist)) 
             {
             distances.push_back(dist);
